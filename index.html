@@ -78,6 +78,7 @@ header h1 { font-size:18px; font-weight:600; color:var(--primary); }
 }
 .group-card:active { transform:scale(0.96); }
 .group-card.active { border-color:var(--accent); }
+.group-card.locked { opacity:0.5; pointer-events:none; }
 .group-card .g-num { font-size:18px; font-weight:700; color:var(--primary); }
 .group-card .g-count { font-size:12px; color:var(--text-light); margin-top:4px; }
 .group-card .g-progress { font-size:11px; color:var(--success); margin-top:2px; }
@@ -148,6 +149,14 @@ header h1 { font-size:18px; font-weight:600; color:var(--primary); }
 .text-danger { color:var(--danger); }
 .text-light { color:var(--text-light); }
 .w-full { width:100%; }
+.mode-tabs {
+  display:flex; gap:6px; margin-bottom:16px;
+}
+.mode-tab {
+  flex:1; padding:10px; border-radius:10px; border:none;
+  background:#f0f0f0; font-size:14px; cursor:pointer;
+}
+.mode-tab.active { background:var(--primary); color:white; }
 </style>
 </head>
 <body>
@@ -161,6 +170,7 @@ header h1 { font-size:18px; font-weight:600; color:var(--primary); }
 
 <div class="container">
 
+  <!-- Dashboard -->
   <div id="dashboard">
     <div class="card">
       <div class="section-title" id="book-title">英語單詞本</div>
@@ -178,6 +188,7 @@ header h1 { font-size:18px; font-weight:600; color:var(--primary); }
     <div class="group-grid" id="group-grid"></div>
   </div>
 
+  <!-- Learn Mode -->
   <div id="learn-mode" class="hide">
     <div class="card">
       <div class="flex justify-between items-center mb-3">
@@ -193,11 +204,12 @@ header h1 { font-size:18px; font-weight:600; color:var(--primary); }
           <div class="flashcard-front">
             <div class="word-display" id="card-word">word</div>
             <div class="word-reading" id="card-reading"></div>
-            <div class="flip-hint">點擊翻轉查看例句</div>
+            <div class="flip-hint">點擊翻轉查看意思</div>
           </div>
           <div class="flashcard-back">
-            <div class="word-meaning" id="card-meaning"></div>
+            <div class="word-meaning" id="card-meaning">意思</div>
             <div class="word-example" id="card-example"></div>
+            <div class="word-reading" id="card-back-reading"></div>
           </div>
         </div>
       </div>
@@ -209,6 +221,7 @@ header h1 { font-size:18px; font-weight:600; color:var(--primary); }
     <button class="btn btn-block mt-3" onclick="endLearn()">結束學習，進入測驗</button>
   </div>
 
+  <!-- Test Mode -->
   <div id="test-mode" class="hide">
     <div class="card">
       <div class="flex justify-between items-center mb-3">
@@ -227,6 +240,7 @@ header h1 { font-size:18px; font-weight:600; color:var(--primary); }
     </div>
   </div>
 
+  <!-- Test Results -->
   <div id="test-results" class="hide">
     <div class="card text-center">
       <div class="text-xl font-bold text-primary mb-2">測驗結果</div>
@@ -248,12 +262,13 @@ header h1 { font-size:18px; font-weight:600; color:var(--primary); }
 
 <script>
 
+// === DATA ===
 const BOOKS = {
   english: {
     name: '英語單詞本',
     lang: 'en-US',
-    words: [{"word": "steve jobs", "example": "We hope your team can become the “Steve Jobs” and “Elon Musk” of Kyoto — creating new trends and defining what comes next.", "meaning": "", "ipa": "stiv ʤɑbz"}, {"word": "elon musk", "example": "We hope your team can become the “Steve Jobs” and “Elon Musk” of Kyoto — creating new trends and defining what comes next.", "meaning": "", "ipa": "elon* məsk"}, {"word": "perspective", "example": "What we hope from your team is a more future-facing perspective — ideas that feel ahead of the market, not just aligned with it.", "meaning": "", "ipa": "pərˈspɛktɪv"}, {"word": "align", "example": "What we hope from your team is a more future-facing perspective — ideas that feel ahead of the market, not just aligned with it.", "meaning": "", "ipa": "əˈlaɪn"}, {"word": "origin", "example": "For example, Kyoto mint carries cultural meaning and a strong sense of origin, while modern technology gives the product a more future-oriented feeling.", "meaning": "", "ipa": "ˈɔrəʤən"}, {"word": "future-oriented", "example": "For example, Kyoto mint carries cultural meaning and a strong sense of origin, while modern technology gives the product a more future-oriented feeling.", "meaning": "", "ipa": "future-oriented*"}, {"word": "revolutionary", "example": "Our founder, Mr. GAN GEOK ENG, created White Flower Oil during a time when the product itself felt revolutionary.", "meaning": "", "ipa": "ˌrɛvəˈluʃəˌnɛri"}, {"word": "inspiration", "example": "Please use them as inspiration, then expand, refine, and develop something even more creative and meaningful.", "meaning": "", "ipa": "ˌɪnspərˈeɪʃən"}, {"word": "original", "example": "Also, the original [白花] name referred to narcissus because founder Mr.Gan favorite flower was narcissus, but [Flower Arrangement] (生け花) doesn't limit to one flower.", "meaning": "", "ipa": "ərˈɪʤənəl"}, {"word": "structure", "example": "Suggested structure: Premium（プレミアム） + Product Benefit + Product Type", "meaning": "", "ipa": "ˈstrəkʧər"}, {"word": "evolve", "example": "This isn't just physical overuse — it's mental overconsumption, so the upgrade direction evolves from body treatment into mental healing.", "meaning": "", "ipa": "ɪˈvɑlv"}, {"word": "kanji", "example": "The kanji [白花] can be pronounced:hakka、shirohana、shirahana、shirobana、hakuka", "meaning": "", "ipa": "ˈkænʤi"}, {"word": "correspond", "example": "Hakka, shirakaba, shirakannba can also correspond to: 白華，白樺，白香 —all keep the character 白 (white) and extend the original meaning, so they work as upgraded brand names.", "meaning": "", "ipa": "ˌkɔrəˈspɑnd"}, {"word": "hiragana", "example": "Adding Japanese hiragana breaks up the boring all-Chinese-character look.", "meaning": "", "ipa": "hiragana*"}, {"word": "interpret", "example": "Instead of removing the character completely, we hope to reinterpret it in a softer and more modern way.", "meaning": "", "ipa": "ˌɪnˈtərprət"}, {"word": "scenarios", "example": "We’ve brainstormed products for modern daily scenarios. You can split them into separate items or combine them—adjust based on market needs.", "meaning": "", "ipa": "sɪˈnɛrioʊz"}, {"word": "harmony", "example": "Zen means body and mind influence each other as one. A troubled mind upsets the body, and an unbalanced body disturbs the mind—true health comes from harmony.", "meaning": "", "ipa": "ˈhɑrməni"}, {"word": "zen", "example": "Zen means body and mind influence each other as one. A troubled mind upsets the body, and an unbalanced body disturbs the mind—true health comes from harmony.", "meaning": "", "ipa": "zɛn"}, {"word": "anxiety", "example": "Modern people don't just suffer from physical problems like carsickness or mosquito bites, because anxiety, fatigue, and mental imbalance are much bigger issues today.", "meaning": "", "ipa": "æŋˈzaɪəti"}, {"word": "fatigue", "example": "Modern people don't just suffer from physical problems like carsickness or mosquito bites, because anxiety, fatigue, and mental imbalance are much bigger issues today.", "meaning": "", "ipa": "fəˈtig"}, {"word": "scene", "example": "Scene one: The morning commute. That moment when you flip from sleep mode to full power.", "meaning": "", "ipa": "sin"}, {"word": "commute", "example": "Scene one: The morning commute. That moment when you flip from sleep mode to full power.", "meaning": "", "ipa": "kəmˈjut"}, {"word": "mode", "example": "Scene one: The morning commute. That moment when you flip from sleep mode to full power.", "meaning": "", "ipa": "moʊd"}, {"word": "associate", "example": "The English words we associate with this are energy, dynamic, proactive power, lucky, money, and positive, because these express that fully-charged feeling.", "meaning": "", "ipa": "əˈsoʊʃiˌeɪt"}, {"word": "dynamic", "example": "The English words we associate with this are energy, dynamic, proactive power, lucky, money, and positive, because these express that fully-charged feeling.", "meaning": "", "ipa": "daɪˈnæmɪk"}, {"word": "proactive", "example": "The English words we associate with this are energy, dynamic, proactive power, lucky, money, and positive, because these express that fully-charged feeling.", "meaning": "", "ipa": "ˌproʊˈæktɪv"}, {"word": "express", "example": "The English words we associate with this are energy, dynamic, proactive power, lucky, money, and positive, because these express that fully-charged feeling.", "meaning": "", "ipa": "ɪkˈsprɛs"}, {"word": "fully-charged", "example": "The English words we associate with this are energy, dynamic, proactive power, lucky, money, and positive, because these express that fully-charged feeling.", "meaning": "", "ipa": "fully-charged*"}, {"word": "uninterrupted", "example": "Deep work mode. Writing, designing, brainstorming — when you need hours of uninterrupted focus.", "meaning": "", "ipa": "ˌənɪnərˈəptɪd"}, {"word": "mood", "example": "Adjusting your mood.", "meaning": "", "ipa": "mud"}, {"word": "unstable", "example": "This is for moments when you feel unstable, angry, or anxious and you need to settle your emotions.", "meaning": "", "ipa": "ənˈsteɪbəl"}, {"word": "anxious", "example": "This is for moments when you feel unstable, angry, or anxious and you need to settle your emotions.", "meaning": "", "ipa": "ˈæŋʃəs"}, {"word": "ritual", "example": "Imagine coming home from work and switching off your job mode as a daily ritual.", "meaning": "", "ipa": "ˈrɪʧuəl"}, {"word": "pamper", "example": "The English words are treat, pamper, care, slow down, relax, and good sleep, because this is about that shift from busy to rest.", "meaning": "", "ipa": "ˈpæmpər"}, {"word": "joy", "example": "In Japanese, 愉means joy.", "meaning": "", "ipa": "ʤɔɪ"}, {"word": "intimate", "example": "This covers intimate moments with family, friends, partners, or colleagues.", "meaning": "", "ipa": "ˈɪnɪmət"}, {"word": "warding off evil", "example": "The English words are funeral, horrible, terrible, warding off evil, and life sucks, because we want to express cleaning bad vibes and boosting positive energy.", "meaning": "", "ipa": "ˈwɔrdɪŋ ɔf ˈivəl"}, {"word": "vibe", "example": "The English words are funeral, horrible, terrible, warding off evil, and life sucks, because we want to express cleaning bad vibes and boosting positive energy.", "meaning": "", "ipa": "vaɪb"}, {"word": "purification", "example": "In Japanese, 淨 means purification.", "meaning": "", "ipa": "ˌpjʊrəfəˈkeɪʃən"}, {"word": "emphasize", "example": "We put ゆ (yu) first to emphasize function (not just ingredients), which feels more Zen.", "meaning": "", "ipa": "ˈɛmfəˌsaɪz"}, {"word": "shrine", "example": "So they take products to a shrine in [Kyoto] for blessings, which gives users more inner strength.", "meaning": "", "ipa": "ʃraɪn"}, {"word": "preserve", "example": "Preserve: We come from a GMP pharmaceutical background—this is our unique core asset. We’ll turn pharmaceutical-grade standards into a competitive edge for daily care products.", "meaning": "", "ipa": "prɪˈzərv"}, {"word": "heritage", "example": "Heritage: Modernize our classic ingredient (mint) and use it across different product categories.", "meaning": "", "ipa": "ˈhɛrɪtɪʤ"}, {"word": "precise", "example": "Think of the body as a precise machine. Stress, blue light and irregular routines loosen the “screws.” Our job is to tighten them and bring body and mind back to optimal balance.", "meaning": "", "ipa": "prɪˈsaɪs"}, {"word": "irregular", "example": "Think of the body as a precise machine. Stress, blue light and irregular routines loosen the “screws.” Our job is to tighten them and bring body and mind back to optimal balance.", "meaning": "", "ipa": "ˌɪˈrɛgjələr"}, {"word": "screw", "example": "Think of the body as a precise machine. Stress, blue light and irregular routines loosen the “screws.” Our job is to tighten them and bring body and mind back to optimal balance.", "meaning": "", "ipa": "skru"}, {"word": "optimal", "example": "Think of the body as a precise machine. Stress, blue light and irregular routines loosen the “screws.” Our job is to tighten them and bring body and mind back to optimal balance.", "meaning": "", "ipa": "ˈɑptɪməl"}, {"word": "medical aesthetics", "example": "Take Medical Aesthetics and Minimally Invasive Aesthetic, or Pressure Cooker and Micro-pressure Cooker as examples.", "meaning": "", "ipa": "ˈmɛdɪkəl ɛsˈθɛtɪks"}, {"word": "minimally invasive aesthetic", "example": "Take Medical Aesthetics and Minimally Invasive Aesthetic, or Pressure Cooker and Micro-pressure Cooker as examples.", "meaning": "", "ipa": "ˈmɪnəməli ˌɪnˈveɪsɪv ɛsˈθɛtɪk"}, {"word": "category", "example": "In each pair, the second is a new category transformed and upgraded from the first.", "meaning": "", "ipa": "ˈkætəˌgɔri"}, {"word": "insect", "example": "The original White Flower Oil solved basic physical problems: motion sickness, burns, and insect bites. These were physical injuries that needed physical relief.", "meaning": "", "ipa": "ˈɪnˌsɛkt"}, {"word": "melatonin", "example": "Screens messing with melatonin, causing sleep and metabolism problems", "meaning": "", "ipa": "ˌmɛləˈtoʊnɪn"}, {"word": "metabolism", "example": "Screens messing with melatonin, causing sleep and metabolism problems", "meaning": "", "ipa": "məˈtæbəˌlɪzəm"}, {"word": "exhaustion", "example": "Emotional exhaustion from social media and work stress", "meaning": "", "ipa": "ɪgˈzɔsʧən"}, {"word": "chronic", "example": "Chronic mental fatigue from being “always online”", "meaning": "", "ipa": "ˈkrɑnɪk"}, {"word": "strain", "example": "This is too much physical and mental strain.", "meaning": "", "ipa": "streɪn"}, {"word": "polyphenols", "example": "Tea polyphenols are our core new ingredient, perfectly matched to modern lifestyles.", "meaning": "", "ipa": "polyphenols*"}, {"word": "antioxidant", "example": "Powerful antioxidant: EGCG is one of the strongest natural antioxidants—fights free radicals and reduces cell damage from blue light.", "meaning": "", "ipa": "ˌæntiˈɑksədənt"}, {"word": "radical", "example": "Powerful antioxidant: EGCG is one of the strongest natural antioxidants—fights free radicals and reduces cell damage from blue light.", "meaning": "", "ipa": "ˈrædɪkəl"}, {"word": "circadian", "example": "Regulate circadian rhythm: balances cortisol levels and fixes sleep-wake cycles disrupted by devices.", "meaning": "", "ipa": "sərˈkeɪdiən"}, {"word": "rhythm", "example": "Regulate circadian rhythm: balances cortisol levels and fixes sleep-wake cycles disrupted by devices.", "meaning": "", "ipa": "ˈrɪðəm"}, {"word": "cortisol", "example": "Regulate circadian rhythm: balances cortisol levels and fixes sleep-wake cycles disrupted by devices.", "meaning": "", "ipa": "ˈkɔrtɪˌsɔl"}, {"word": "disrupte", "example": "Regulate circadian rhythm: balances cortisol levels and fixes sleep-wake cycles disrupted by devices.", "meaning": "", "ipa": "disrupte*"}, {"word": "anti-inflammatory", "example": "Anti-inflammatory & soothing: lowers chronic inflammation, relieves stress-related skin sensitivity and mood irritation.", "meaning": "", "ipa": "anti-inflammatory*"}, {"word": "inflammation", "example": "Anti-inflammatory & soothing: lowers chronic inflammation, relieves stress-related skin sensitivity and mood irritation.", "meaning": "", "ipa": "ˌɪnfləˈmeɪʃən"}, {"word": "sensitivity", "example": "Anti-inflammatory & soothing: lowers chronic inflammation, relieves stress-related skin sensitivity and mood irritation.", "meaning": "", "ipa": "ˌsɛnsɪˈtɪvɪti"}, {"word": "irritation", "example": "Anti-inflammatory & soothing: lowers chronic inflammation, relieves stress-related skin sensitivity and mood irritation.", "meaning": "", "ipa": "ˌɪrɪˈteɪʃən"}, {"word": "mature", "example": "The sunscreen market is already fully mature, but blue light protection is still an emerging category in daily care.", "meaning": "", "ipa": "məˈʧʊr"}, {"word": "emerging", "example": "The sunscreen market is already fully mature, but blue light protection is still an emerging category in daily care.", "meaning": "", "ipa": "ˈimərʤɪŋ"}, {"word": "portable", "example": "It’s a portable indoor shield you can take anywhere and use anytime.", "meaning": "", "ipa": "ˈpɔrtəbəl"}, {"word": "shield", "example": "It’s a portable indoor shield you can take anywhere and use anytime.", "meaning": "", "ipa": "ʃild"}, {"word": "suppress", "example": "Using electronics before bed suppresses melatonin, which leads to trouble falling asleep and poor sleep quality.", "meaning": "", "ipa": "səˈprɛs"}, {"word": "metabolic", "example": "Metabolic imbalance affecting energy use and weight management.", "meaning": "", "ipa": "ˌmɛtəˈbɑlɪk"}, {"word": "weight", "example": "Metabolic imbalance affecting energy use and weight management.", "meaning": "", "ipa": "weɪt"}, {"word": "hormone", "example": "Hormone swings that cause skin breakouts and mood swings.", "meaning": "", "ipa": "ˈhɔrˌmoʊn"}, {"word": "aromatherapy", "example": "Our new White Flower Oil formula works two ways: aromatherapy + tea polyphenols, to help your body reset —getting your body clock back to its natural rhythm.", "meaning": "", "ipa": "əˌroʊməˈθərəpi"}, {"word": "buffer", "example": "Our product doesn’t just calm you down—it creates an emotional buffer zone between stress and rest.", "meaning": "", "ipa": "ˈbəfər"}, {"word": "shift", "example": "It’s a portable state switcher that helps you shift from fight mode to repair mode.", "meaning": "", "ipa": "ʃɪft"}, {"word": "dual synergy", "example": "We want to move beyond boring single-benefit or basic combined-benefit designs.", "meaning": "", "ipa": "duəl ˈsɪnərʤi"}, {"word": "personification", "example": "trait", "meaning": "", "ipa": "pərˌsɑnəfəˈkeɪʃən"}, {"word": "write usage scenario copy", "example": "tangible", "meaning": "", "ipa": "raɪt ˈjusɪʤ sɪˈnɛrioʊ ˈkɑpi"}, {"word": "differentiated positioning", "example": "Positioning", "meaning": "", "ipa": "ˌdɪfərˈɛnʧiˌeɪtəd pəˈzɪʃənɪŋ"}, {"word": "this is our top priority.", "example": "brick-and-mortar", "meaning": "", "ipa": "ðɪs ɪz ɑr tɔp praɪˈɔrəti."}],
-    groups: [[0, 1, 2, 3, 4, 5], [6, 7, 8, 9, 10, 11], [12, 13, 14, 15, 16, 17], [18, 19, 20, 21, 22, 23], [24, 25, 26, 27, 28, 29], [30, 31, 32, 33, 34, 35], [36, 37, 38, 39, 40, 41], [42, 43, 44, 45, 46, 47], [48, 49, 50, 51, 52, 53], [54, 55, 56, 57, 58, 59], [60, 61, 62, 63, 64, 65], [66, 67, 68, 69, 70, 71], [72, 73, 74, 75, 76, 77], [78, 79, 80, 81, 82]],
+    words: [{"word": "steve jobs", "example": "We hope your team can become the “Steve Jobs” and “Elon Musk” of Kyoto — creating new trends and defining what comes next.", "meaning": ""}, {"word": "elon musk", "example": "We hope your team can become the “Steve Jobs” and “Elon Musk” of Kyoto — creating new trends and defining what comes next.", "meaning": ""}, {"word": "perspective", "example": "What we hope from your team is a more future-facing perspective — ideas that feel ahead of the market, not just aligned with it.", "meaning": ""}, {"word": "align", "example": "What we hope from your team is a more future-facing perspective — ideas that feel ahead of the market, not just aligned with it.", "meaning": ""}, {"word": "origin", "example": "For example, Kyoto mint carries cultural meaning and a strong sense of origin, while modern technology gives the product a more future-oriented feeling.", "meaning": ""}, {"word": "future-oriented", "example": "For example, Kyoto mint carries cultural meaning and a strong sense of origin, while modern technology gives the product a more future-oriented feeling.", "meaning": ""}, {"word": "revolutionary", "example": "Our founder, Mr. GAN GEOK ENG, created White Flower Oil during a time when the product itself felt revolutionary.", "meaning": ""}, {"word": "inspiration", "example": "Please use them as inspiration, then expand, refine, and develop something even more creative and meaningful.", "meaning": ""}, {"word": "original", "example": "Also, the original [白花] name referred to narcissus because founder Mr.Gan favorite flower was narcissus, but [Flower Arrangement] (生け花) doesn't limit to one flower.", "meaning": ""}, {"word": "structure", "example": "Suggested structure: Premium（プレミアム） + Product Benefit + Product Type", "meaning": ""}, {"word": "evolve", "example": "This isn't just physical overuse — it's mental overconsumption, so the upgrade direction evolves from body treatment into mental healing.", "meaning": ""}, {"word": "kanji", "example": "The kanji [白花] can be pronounced:hakka、shirohana、shirahana、shirobana、hakuka", "meaning": ""}, {"word": "correspond", "example": "Hakka, shirakaba, shirakannba can also correspond to: 白華，白樺，白香 —all keep the character 白 (white) and extend the original meaning, so they work as upgraded brand names.", "meaning": ""}, {"word": "hiragana", "example": "Adding Japanese hiragana breaks up the boring all-Chinese-character look.", "meaning": ""}, {"word": "interpret", "example": "Instead of removing the character completely, we hope to reinterpret it in a softer and more modern way.", "meaning": ""}, {"word": "scenarios", "example": "We’ve brainstormed products for modern daily scenarios. You can split them into separate items or combine them—adjust based on market needs.", "meaning": ""}, {"word": "harmony", "example": "Zen means body and mind influence each other as one. A troubled mind upsets the body, and an unbalanced body disturbs the mind—true health comes from harmony.", "meaning": ""}, {"word": "zen", "example": "Zen means body and mind influence each other as one. A troubled mind upsets the body, and an unbalanced body disturbs the mind—true health comes from harmony.", "meaning": ""}, {"word": "anxiety", "example": "Modern people don't just suffer from physical problems like carsickness or mosquito bites, because anxiety, fatigue, and mental imbalance are much bigger issues today.", "meaning": ""}, {"word": "fatigue", "example": "Modern people don't just suffer from physical problems like carsickness or mosquito bites, because anxiety, fatigue, and mental imbalance are much bigger issues today.", "meaning": ""}, {"word": "scene", "example": "Scene one: The morning commute. That moment when you flip from sleep mode to full power.", "meaning": ""}, {"word": "commute", "example": "Scene one: The morning commute. That moment when you flip from sleep mode to full power.", "meaning": ""}, {"word": "mode", "example": "Scene one: The morning commute. That moment when you flip from sleep mode to full power.", "meaning": ""}, {"word": "associate", "example": "The English words we associate with this are energy, dynamic, proactive power, lucky, money, and positive, because these express that fully-charged feeling.", "meaning": ""}, {"word": "dynamic", "example": "The English words we associate with this are energy, dynamic, proactive power, lucky, money, and positive, because these express that fully-charged feeling.", "meaning": ""}, {"word": "proactive", "example": "The English words we associate with this are energy, dynamic, proactive power, lucky, money, and positive, because these express that fully-charged feeling.", "meaning": ""}, {"word": "express", "example": "The English words we associate with this are energy, dynamic, proactive power, lucky, money, and positive, because these express that fully-charged feeling.", "meaning": ""}, {"word": "fully-charged", "example": "The English words we associate with this are energy, dynamic, proactive power, lucky, money, and positive, because these express that fully-charged feeling.", "meaning": ""}, {"word": "uninterrupted", "example": "Deep work mode. Writing, designing, brainstorming — when you need hours of uninterrupted focus.", "meaning": ""}, {"word": "mood", "example": "Adjusting your mood.", "meaning": ""}, {"word": "unstable", "example": "This is for moments when you feel unstable, angry, or anxious and you need to settle your emotions.", "meaning": ""}, {"word": "anxious", "example": "This is for moments when you feel unstable, angry, or anxious and you need to settle your emotions.", "meaning": ""}, {"word": "ritual", "example": "Imagine coming home from work and switching off your job mode as a daily ritual.", "meaning": ""}, {"word": "pamper", "example": "The English words are treat, pamper, care, slow down, relax, and good sleep, because this is about that shift from busy to rest.", "meaning": ""}, {"word": "joy", "example": "In Japanese, 愉means joy.", "meaning": ""}, {"word": "intimate", "example": "This covers intimate moments with family, friends, partners, or colleagues.", "meaning": ""}, {"word": "warding off evil", "example": "The English words are funeral, horrible, terrible, warding off evil, and life sucks, because we want to express cleaning bad vibes and boosting positive energy.", "meaning": ""}, {"word": "vibe", "example": "The English words are funeral, horrible, terrible, warding off evil, and life sucks, because we want to express cleaning bad vibes and boosting positive energy.", "meaning": ""}, {"word": "purification", "example": "In Japanese, 淨 means purification.", "meaning": ""}, {"word": "emphasize", "example": "We put ゆ (yu) first to emphasize function (not just ingredients), which feels more Zen.", "meaning": ""}, {"word": "shrine", "example": "So they take products to a shrine in [Kyoto] for blessings, which gives users more inner strength.", "meaning": ""}, {"word": "preserve", "example": "Preserve: We come from a GMP pharmaceutical background—this is our unique core asset. We’ll turn pharmaceutical-grade standards into a competitive edge for daily care products.", "meaning": ""}, {"word": "heritage", "example": "Heritage: Modernize our classic ingredient (mint) and use it across different product categories.", "meaning": ""}, {"word": "precise", "example": "Think of the body as a precise machine. Stress, blue light and irregular routines loosen the “screws.” Our job is to tighten them and bring body and mind back to optimal balance.", "meaning": ""}, {"word": "irregular", "example": "Think of the body as a precise machine. Stress, blue light and irregular routines loosen the “screws.” Our job is to tighten them and bring body and mind back to optimal balance.", "meaning": ""}, {"word": "screw", "example": "Think of the body as a precise machine. Stress, blue light and irregular routines loosen the “screws.” Our job is to tighten them and bring body and mind back to optimal balance.", "meaning": ""}, {"word": "optimal", "example": "Think of the body as a precise machine. Stress, blue light and irregular routines loosen the “screws.” Our job is to tighten them and bring body and mind back to optimal balance.", "meaning": ""}, {"word": "medical aesthetics", "example": "Take Medical Aesthetics and Minimally Invasive Aesthetic, or Pressure Cooker and Micro-pressure Cooker as examples.", "meaning": ""}, {"word": "minimally invasive aesthetic", "example": "Take Medical Aesthetics and Minimally Invasive Aesthetic, or Pressure Cooker and Micro-pressure Cooker as examples.", "meaning": ""}, {"word": "category", "example": "In each pair, the second is a new category transformed and upgraded from the first.", "meaning": ""}, {"word": "using the same logic, white flower oil will evolve from medicalgrade treatment into daily gentle care, creating an entirely new product category.", "example": "Mentholatum", "meaning": ""}, {"word": "[mentholatum]: transformed from pharma into cosmetics successfully, so it turned medical trust into daily security, which built brand differentiation.", "example": "Differentiation", "meaning": ""}, {"word": "skinceuticals: combines skin and pharmaceuticals, which represents professional science plus skincare technology, so [white flower oil] could create a similar herbal-plus-science compound word.", "example": "Rhythm", "meaning": ""}, {"word": "first aid beauty: it takes the concept of first aid from the medical field and brings it into daily skincare.", "example": "We can follow the same logic: expand our state rescue from headache relief to cover emotional balance, blue light defense, daily rhythm regulation, and more.", "meaning": ""}, {"word": "insect", "example": "The original White Flower Oil solved basic physical problems: motion sickness, burns, and insect bites. These were physical injuries that needed physical relief.", "meaning": ""}, {"word": "melatonin", "example": "Screens messing with melatonin, causing sleep and metabolism problems", "meaning": ""}, {"word": "metabolism", "example": "Screens messing with melatonin, causing sleep and metabolism problems", "meaning": ""}, {"word": "exhaustion", "example": "Emotional exhaustion from social media and work stress", "meaning": ""}, {"word": "chronic", "example": "Chronic mental fatigue from being “always online”", "meaning": ""}, {"word": "strain", "example": "This is too much physical and mental strain.", "meaning": ""}, {"word": "polyphenols", "example": "Tea polyphenols are our core new ingredient, perfectly matched to modern lifestyles.", "meaning": ""}, {"word": "antioxidant", "example": "Powerful antioxidant: EGCG is one of the strongest natural antioxidants—fights free radicals and reduces cell damage from blue light.", "meaning": ""}, {"word": "radical", "example": "Powerful antioxidant: EGCG is one of the strongest natural antioxidants—fights free radicals and reduces cell damage from blue light.", "meaning": ""}, {"word": "circadian", "example": "Regulate circadian rhythm: balances cortisol levels and fixes sleep-wake cycles disrupted by devices.", "meaning": ""}, {"word": "rhythm", "example": "Regulate circadian rhythm: balances cortisol levels and fixes sleep-wake cycles disrupted by devices.", "meaning": ""}, {"word": "cortisol", "example": "Regulate circadian rhythm: balances cortisol levels and fixes sleep-wake cycles disrupted by devices.", "meaning": ""}, {"word": "disrupte", "example": "Regulate circadian rhythm: balances cortisol levels and fixes sleep-wake cycles disrupted by devices.", "meaning": ""}, {"word": "anti-inflammatory", "example": "Anti-inflammatory & soothing: lowers chronic inflammation, relieves stress-related skin sensitivity and mood irritation.", "meaning": ""}, {"word": "inflammation", "example": "Anti-inflammatory & soothing: lowers chronic inflammation, relieves stress-related skin sensitivity and mood irritation.", "meaning": ""}, {"word": "sensitivity", "example": "Anti-inflammatory & soothing: lowers chronic inflammation, relieves stress-related skin sensitivity and mood irritation.", "meaning": ""}, {"word": "irritation", "example": "Anti-inflammatory & soothing: lowers chronic inflammation, relieves stress-related skin sensitivity and mood irritation.", "meaning": ""}, {"word": "mature", "example": "The sunscreen market is already fully mature, but blue light protection is still an emerging category in daily care.", "meaning": ""}, {"word": "emerging", "example": "The sunscreen market is already fully mature, but blue light protection is still an emerging category in daily care.", "meaning": ""}, {"word": "portable", "example": "It’s a portable indoor shield you can take anywhere and use anytime.", "meaning": ""}, {"word": "shield", "example": "It’s a portable indoor shield you can take anywhere and use anytime.", "meaning": ""}, {"word": "suppress", "example": "Using electronics before bed suppresses melatonin, which leads to trouble falling asleep and poor sleep quality.", "meaning": ""}, {"word": "metabolic", "example": "Metabolic imbalance affecting energy use and weight management.", "meaning": ""}, {"word": "weight", "example": "Metabolic imbalance affecting energy use and weight management.", "meaning": ""}, {"word": "hormone", "example": "Hormone swings that cause skin breakouts and mood swings.", "meaning": ""}, {"word": "aromatherapy", "example": "Our new White Flower Oil formula works two ways: aromatherapy + tea polyphenols, to help your body reset —getting your body clock back to its natural rhythm.", "meaning": ""}, {"word": "buffer", "example": "Our product doesn’t just calm you down—it creates an emotional buffer zone between stress and rest.", "meaning": ""}, {"word": "shift", "example": "It’s a portable state switcher that helps you shift from fight mode to repair mode.", "meaning": ""}, {"word": "dual synergy", "example": "We want to move beyond boring single-benefit or basic combined-benefit designs.", "meaning": ""}, {"word": "instead, we’ll create more innovative products built around our concept of dual synergy.", "example": "Activate", "meaning": ""}, {"word": "one side is activate — to energize you and boost confidence.", "example": "track", "meaning": ""}, {"word": "use it for interviews, long drives, focused work or study, and getting back on track after holidays.", "example": "Soothe", "meaning": ""}, {"word": "the other side is soothe — to calm you down and ease stress.", "example": "unwind", "meaning": ""}, {"word": "use it before bed, when you feel anxious, or when you need to unwind.", "example": "appeal", "meaning": ""}, {"word": "we want to follow current trends and create names with strong emotional appeal.", "example": "trendy", "meaning": ""}, {"word": "for example, on / off — a pair of opposites that sounds digital, vivid and easy to remember.", "example": "Or Active / Cooldown (CD), which comes from gaming — it means using a skill and waiting for it to recharge. Both are trendy and modern.", "meaning": ""}, {"word": "personification", "example": "trait", "meaning": ""}, {"word": "we’ll add personality & traits to each product, so every item becomes a one-of-a-kind friend.", "example": "Personality", "meaning": ""}, {"word": "take mbti 16 personalities as an example: 16 personality types match 16 vivid personas.", "example": "engagement", "meaning": ""}, {"word": "white flower oil can build its own product personality system, making our products “speak” to users and strengthen connection and engagement.", "example": "volume", "meaning": ""}, {"word": "we adopt a pocket-friendly design. with volume under 30ml, it fits easily in handbags and makeup pouches for instant use anytime, anywhere.", "example": "pouche", "meaning": ""}, {"word": "we stay eco-conscious. made with eco-friendly materials and printing, the bottle supports a refillable system to reduce long-term environmental impact.", "example": "refillable", "meaning": ""}, {"word": "we stay eco-conscious. made with eco-friendly materials and printing, the bottle supports a refillable system to reduce long-term environmental impact. as a perfect companion for digital devices, it is designed to pair well with phones and computers, ideal for use while operating electronics.", "example": "safeguard", "meaning": ""}, {"word": "it offers gentle daily protection and blocks blue light to safeguard your skin.", "example": "Compact", "meaning": ""}, {"word": "compact and portable, it won’t take up much space.", "example": "portable", "meaning": ""}, {"word": "silver: it boasts a tech style and serves as a great companion for electronics.", "example": "boast", "meaning": ""}, {"word": "visual symbol: a delicate small silver umbrella. when opened, it forms a translucent glowing shield.", "example": "translucent", "meaning": ""}, {"word": "a translucent energy shield that forms an invisible armor on the skin.", "example": "armor", "meaning": ""}, {"word": "it provides defense and protection, creating a lightweight, invisible skin layer with weightless coverage.", "example": "Semi-transparent", "meaning": ""}, {"word": "semi-transparent: it delivers invisible protection and stays reliable as your long-lasting companion.", "example": "glance", "meaning": ""}, {"word": "customers from english and japanese markets get the brand message at a glance. we want to design a cross-cultural brand name with the same smart logic, easy to understand across cultures.", "example": "scenario", "meaning": ""}, {"word": "write usage scenario copy", "example": "tangible", "meaning": ""}, {"word": "product upgrades shall deliver tangible revenue growth, with performance quantified by data.", "example": "revenue", "meaning": ""}, {"word": "we rely on market research to define clear positioning and build unique differentiation.", "example": "Differentiated", "meaning": ""}, {"word": "differentiated positioning", "example": "Positioning", "meaning": ""}, {"word": "medicated oil and essential oil are overly mainstream.", "example": "priority", "meaning": ""}, {"word": "this is our top priority.", "example": "brick-and-mortar", "meaning": ""}, {"word": "compared with department stores, brick-and-mortar shops and other retail channels, what is our product differentiation?", "example": "Stabilization", "meaning": ""}, {"word": "skin stabilization—anti-inflammatory and repairing, keeps skin in a balanced state.", "example": "Anti-inflammatory", "meaning": ""}, {"word": "talkability: a globally popular new ingredient that satisfies consumers’ curiosity.", "example": "laid-back", "meaning": ""}, {"word": "instead of a fixed shape, the bag can be adjusted freely, delivering a casual and laid-back vibe.", "example": "vibe", "meaning": ""}, {"word": "to make this flexible shaping possible, they added soft wire inside the bag.", "example": "launch", "meaning": ""}, {"word": "chanel has launched a new iteration of its new handbag with a highly avant-garde design.", "example": "iteration", "meaning": ""}, {"word": "but after its launch, consumer feedback was extremely polarized.", "example": "illustrate", "meaning": ""}, {"word": "this case illustrates an important point: if our idea is too ahead of its time, the current market cannot understand or accept it.", "example": "backfire", "meaning": ""}, {"word": "it will only bring negative feedback and backfire on the brand.", "example": "", "meaning": ""}],
+    groups: [[0, 1, 2, 3, 4, 5], [6, 7, 8, 9, 10, 11], [12, 13, 14, 15, 16, 17], [18, 19, 20, 21, 22, 23], [24, 25, 26, 27, 28, 29], [30, 31, 32, 33, 34, 35], [36, 37, 38, 39, 40, 41], [42, 43, 44, 45, 46, 47], [48, 49, 50, 51, 52, 53], [54, 55, 56, 57, 58, 59], [60, 61, 62, 63, 64, 65], [66, 67, 68, 69, 70, 71], [72, 73, 74, 75, 76, 77], [78, 79, 80, 81, 82, 83], [84, 85, 86, 87, 88, 89], [90, 91, 92, 93, 94, 95], [96, 97, 98, 99, 100, 101], [102, 103, 104, 105, 106, 107], [108, 109, 110, 111, 112, 113], [114, 115, 116, 117, 118, 119]],
     groupSize: 6
   },
   japanese: {
@@ -267,6 +282,7 @@ const BOOKS = {
 
 const STORAGE_KEY = 'vocabFlashcardV6';
 
+// Load progress from localStorage
 function loadProgress() {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
@@ -289,7 +305,9 @@ let testQueue = [];
 let testIndex = 0;
 let testResults = { correct: [], wrong: [] };
 let isFlipped = false;
-// Part 4: Core JS logic - fixed version with IPA and example TTS
+
+// === APP LOGIC ===
+
 function switchBook(book) {
   currentBook = book;
   currentView = 'dashboard';
@@ -346,14 +364,17 @@ function startGroup(idx) {
   prog.currentGroup = idx;
   saveProgress(progress);
 
+  // Build learn queue: current group words + 1-2 preview from next group
   const group = book.groups[idx];
   learnQueue = [...group];
 
+  // Randomly insert 1-2 words from next group as preview
   if (idx + 1 < book.groups.length) {
     const nextGroup = book.groups[idx + 1];
     const previewCount = Math.min(2, nextGroup.length);
     const shuffled = [...nextGroup].sort(() => Math.random() - 0.5);
     const previews = shuffled.slice(0, previewCount);
+    // Insert previews at random positions
     previews.forEach(previewIdx => {
       const insertPos = Math.floor(Math.random() * (learnQueue.length + 1));
       learnQueue.splice(insertPos, 0, previewIdx);
@@ -380,6 +401,7 @@ function renderLearnCard() {
   const cardReading = document.getElementById('card-reading');
   const cardMeaning = document.getElementById('card-meaning');
   const cardExample = document.getElementById('card-example');
+  const cardBackReading = document.getElementById('card-back-reading');
 
   // Reset flip
   isFlipped = false;
@@ -387,54 +409,30 @@ function renderLearnCard() {
 
   if (currentBook === 'english') {
     cardWord.textContent = word.word;
-    cardReading.textContent = word.ipa ? '/' + word.ipa + '/' : '';
-    cardMeaning.textContent = '';
-    cardExample.textContent = '';
+    cardReading.textContent = '';
+    cardMeaning.textContent = word.example ? word.example.substring(0, 80) + (word.example.length > 80 ? '...' : '') : '';
+    cardExample.textContent = word.example || '';
+    cardBackReading.textContent = '';
   } else {
     cardWord.textContent = word.word;
     cardReading.textContent = word.reading || '';
-    cardMeaning.textContent = '';
-    cardExample.textContent = '';
+    cardMeaning.textContent = (word.meaning_cn || '') + (word.meaning_en ? ' / ' + word.meaning_en : '');
+    cardExample.textContent = word.romaji ? 'Romaji: ' + word.romaji : '';
+    cardBackReading.textContent = word.reading || '';
   }
 }
 
 function flipCard() {
-  if (isFlipped) return; // Only flip once
-  isFlipped = true;
-  document.getElementById('flashcard').classList.add('flipped');
-
-  // Populate back content when flipping
-  const book = getBook();
-  const wordIdx = learnQueue[learnIndex];
-  const word = book.words[wordIdx];
-  const cardMeaning = document.getElementById('card-meaning');
-  const cardExample = document.getElementById('card-example');
-
-  if (currentBook === 'english') {
-    cardMeaning.textContent = '例句：' + (word.example || '');
-    cardExample.innerHTML = word.example
-      ? '<button class="speaker-btn" style="width:48px;height:48px;font-size:20px;" onclick="speakExample()">🔊</button> 朗讀例句'
-      : '';
-  } else {
-    cardMeaning.textContent = (word.meaning_cn || '') + (word.meaning_en ? ' / ' + word.meaning_en : '');
-    cardExample.textContent = word.romaji ? 'Romaji: ' + word.romaji : '';
-  }
+  isFlipped = !isFlipped;
+  document.getElementById('flashcard').classList.toggle('flipped', isFlipped);
 }
 
 function speakCurrent() {
   const book = getBook();
   const wordIdx = learnQueue[learnIndex];
   const word = book.words[wordIdx];
-  speak(word.word, book.lang);
-}
-
-function speakExample() {
-  const book = getBook();
-  const wordIdx = learnQueue[learnIndex];
-  const word = book.words[wordIdx];
-  if (word.example) {
-    speak(word.example, book.lang);
-  }
+  const text = currentBook === 'english' ? word.word : word.word;
+  speak(text, book.lang);
 }
 
 function speakTestWord() {
@@ -454,6 +452,7 @@ function speak(text, lang) {
 }
 
 function markKnown() {
+  const book = getBook();
   const prog = getBookProgress();
   const wordIdx = learnQueue[learnIndex];
   const currentStatus = prog.wordStatus[wordIdx] || 0;
@@ -465,6 +464,7 @@ function markKnown() {
 }
 
 function markUnknown() {
+  const book = getBook();
   const prog = getBookProgress();
   const wordIdx = learnQueue[learnIndex];
   const currentStatus = prog.wordStatus[wordIdx] || 0;
@@ -485,6 +485,7 @@ function nextLearnCard() {
 }
 
 function endLearn() {
+  // Build test queue from current group (not previews)
   const book = getBook();
   const group = book.groups[currentGroupIdx];
   testQueue = [...group].sort(() => Math.random() - 0.5);
@@ -505,12 +506,13 @@ function renderTestQuestion() {
   document.getElementById('test-progress-bar').style.width = ((testIndex + 1) / testQueue.length * 100) + '%';
 
   document.getElementById('test-word').textContent = word.word;
-  document.getElementById('test-reading').textContent = currentBook === 'japanese' ? (word.reading || '') : (word.ipa ? '/' + word.ipa + '/' : '');
+  document.getElementById('test-reading').textContent = currentBook === 'japanese' ? (word.reading || '') : '';
 
+  // Generate 4 options
   const options = generateOptions(wordIdx);
   const container = document.getElementById('quiz-options');
   container.innerHTML = '';
-  options.forEach((opt) => {
+  options.forEach((opt, i) => {
     const div = document.createElement('div');
     div.className = 'quiz-option';
     div.textContent = opt.text;
@@ -524,9 +526,10 @@ function generateOptions(correctIdx) {
   const book = getBook();
   const correctWord = book.words[correctIdx];
   const correctText = currentBook === 'english'
-    ? (correctWord.example ? correctWord.example.substring(0, 80) : correctWord.word)
+    ? (correctWord.example ? correctWord.example.substring(0, 60) : correctWord.word)
     : (correctWord.meaning_cn || correctWord.word);
 
+  // Collect distractors from current and nearby groups
   const allIndices = [];
   for (let g = Math.max(0, currentGroupIdx - 1); g < Math.min(book.groups.length, currentGroupIdx + 2); g++) {
     allIndices.push(...book.groups[g]);
@@ -541,17 +544,19 @@ function generateOptions(correctIdx) {
     if (options.length >= 4) break;
     const w = book.words[idx];
     const text = currentBook === 'english'
-      ? (w.example ? w.example.substring(0, 80) : w.word)
+      ? (w.example ? w.example.substring(0, 60) : w.word)
       : (w.meaning_cn || w.word);
-    if (text && text !== correctText && text.length > 3) {
+    if (text && text !== correctText) {
       options.push({ text: text, correct: false });
     }
   }
 
+  // Shuffle options
   return options.sort(() => Math.random() - 0.5);
 }
 
 function selectOption(el, isCorrect) {
+  const book = getBook();
   const prog = getBookProgress();
   const wordIdx = testQueue[testIndex];
 
@@ -604,6 +609,7 @@ function showTestResults() {
   else msg = '需要加強！錯誤單詞已加入複習列表。';
   document.getElementById('result-message').textContent = msg;
 
+  // Show wrong words
   const wrongCard = document.getElementById('wrong-words-card');
   const wrongList = document.getElementById('wrong-words-list');
   if (testResults.wrong.length > 0) {
@@ -615,7 +621,7 @@ function showTestResults() {
       const div = document.createElement('div');
       div.className = 'mt-2';
       if (currentBook === 'english') {
-        div.innerHTML = `<strong>${w.word}</strong> ${w.ipa ? '(' + w.ipa + ')' : ''}: ${w.example ? w.example.substring(0, 80) : ''}`;
+        div.innerHTML = `<strong>${w.word}</strong>: ${w.example ? w.example.substring(0, 80) : ''}`;
       } else {
         div.innerHTML = `<strong>${w.word}</strong> ${w.reading ? '(' + w.reading + ')' : ''}: ${w.meaning_cn || ''}`;
       }
@@ -631,6 +637,11 @@ function backToDashboard() {
   renderDashboard();
 }
 
+// Initialize
 document.addEventListener('DOMContentLoaded', () => {
   renderDashboard();
 });
+
+</script>
+</body>
+</html>
