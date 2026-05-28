@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<title>詞彙記憶卡</title>
+<style>
+:root {
+  --bg: #faf9f7;
+  --card: #ffffff;
+  --primary: #2d5a8a;
+  --primary-light: #e8f0f8;
+  --accent: #4a9d6f;
+  --accent-light: #e6f4ec;
+  --warn: #c97b3a;
+  --warn-light: #fdf3e8;
+  --danger: #b54a4a;
+  --danger-light: #fbeaea;
+  --text: #1a1a1a;
+  --text-sec: #666666;
+  --text-light: #999999;
+  --border: rgba(0,0,0,0.08);
+  --shadow: 0 2px 12px rgba(0,0,0,0.06);
+  --shadow-lg: 0 8px 32px rgba(0,0,0,0.08);
+  --radius: 16px;
+  --radius-sm: 10px;
+  --font: -apple-system, BlinkMacSystemFont, 'PingFang TC', 'Noto Sans TC', 'Segoe UI', sans-serif;
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; }
+body { font-family: var(--font); background: var(--bg); color: var(--text); display: flex; flex-direction: column; }
+#app { flex: 1; display: flex; flex-direction: column; max-width: 600px; width: 100%; margin: 0 auto; overflow: hidden; }
+.header { padding: 16px 20px 8px; background: var(--card); border-bottom: 1px solid var(--border); z-index: 10; }
+.header h1 { margin: 0; font-size: 20px; font-weight: 600; letter-spacing: 0.5px; }
+.subtitle { font-size: 12px; color: var(--text-light); margin-top: 2px; }
+.tabs { display: flex; gap: 4px; padding: 8px 16px 12px; background: var(--card); border-bottom: 1px solid var(--border); }
+.tab { flex: 1; padding: 10px 8px; border: none; border-radius: var(--radius-sm); background: transparent; font-family: inherit; font-size: 13px; font-weight: 500; color: var(--text-sec); cursor: pointer; transition: all 0.2s; text-align: center; -webkit-appearance: none; }
+.tab.active { background: var(--primary-light); color: var(--primary); }
+.tab:active { transform: scale(0.96); }
+.content { flex: 1; overflow-y: auto; padding: 16px; -webkit-overflow-scrolling: touch; }
+.content::-webkit-scrollbar { display: none; }
+.stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 16px; }
+.stat-card { background: var(--card); border-radius: var(--radius-sm); padding: 14px 8px; text-align: center; box-shadow: var(--shadow); border: 1px solid var(--border); }
+.stat-card .num { font-size: 26px; font-weight: 600; line-height: 1; }
+.stat-card .label { font-size: 11px; color: var(--text-sec); margin-top: 6px; }
+.stat-card.new .num { color: var(--primary); }
+.stat-card.learning .num { color: var(--warn); }
+.stat-card.mastered .num { color: var(--accent); }
+.section-title { font-size: 15px; font-weight: 600; margin: 20px 0 10px; display: flex; align-items: center; gap: 8px; }
+.section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+.entry-list { display: flex; flex-direction: column; gap: 10px; }
+.entry-card { background: var(--card); border-radius: var(--radius-sm); padding: 14px 16px; box-shadow: var(--shadow); border: 1px solid var(--border); cursor: pointer; transition: transform 0.15s; position: relative; }
+.entry-card:active { transform: scale(0.98); }
+.entry-card .word { font-size: 16px; font-weight: 600; margin-bottom: 2px; display: flex; align-items: center; gap: 8px; }
+.entry-card .phonetic { font-size: 12px; color: var(--text-light); font-family: 'Georgia', 'Times New Roman', serif; margin-bottom: 4px; }
+.entry-card .meaning { font-size: 13px; color: var(--text-sec); line-height: 1.5; }
+.entry-card .meta { display: flex; gap: 8px; margin-top: 8px; align-items: center; }
+.status-tag { font-size: 10px; padding: 3px 8px; border-radius: 20px; font-weight: 500; }
+.status-tag.new { background: var(--primary-light); color: var(--primary); }
+.status-tag.learning { background: var(--warn-light); color: var(--warn); }
+.status-tag.mastered { background: var(--accent-light); color: var(--accent); }
+.date-tag { font-size: 10px; color: var(--text-light); }
+.speak-btn { background: none; border: none; font-size: 16px; cursor: pointer; padding: 2px 6px; border-radius: 6px; }
+.speak-btn:active { background: var(--primary-light); transform: scale(0.9); }
+.btn { border: none; border-radius: var(--radius-sm); padding: 12px 20px; font-family: inherit; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; justify-content: center; gap: 6px; -webkit-appearance: none; }
+.btn:active { transform: scale(0.96); }
+.btn-primary { background: var(--primary); color: white; }
+.btn-accent { background: var(--accent); color: white; }
+.btn-warn { background: var(--warn); color: white; }
+.btn-danger { background: var(--danger); color: white; }
+.btn-ghost { background: transparent; color: var(--text-sec); border: 1px solid var(--border); }
+.btn-block { width: 100%; }
+.btn-lg { padding: 14px 24px; font-size: 15px; }
+.form-group { margin-bottom: 14px; }
+.form-group label { display: block; font-size: 12px; font-weight: 500; color: var(--text-sec); margin-bottom: 6px; }
+.form-group input, .form-group textarea { width: 100%; padding: 12px 14px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-family: inherit; font-size: 15px; background: var(--card); color: var(--text); outline: none; -webkit-appearance: none; }
+.form-group input:focus, .form-group textarea:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-light); }
+.form-group textarea { min-height: 80px; resize: vertical; }
+.flashcard-wrap { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; padding: 20px; }
+.flashcard { width: 100%; max-width: 360px; min-height: 240px; background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow-lg); border: 1px solid var(--border); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 28px; cursor: pointer; transition: transform 0.3s, box-shadow 0.3s; position: relative; text-align: center; }
+.flashcard:active { transform: scale(0.97); }
+.flashcard .front-word { font-size: 28px; font-weight: 600; margin-bottom: 2px; display: flex; align-items: center; gap: 10px; }
+.flashcard .front-phonetic { font-size: 14px; color: var(--text-light); font-family: 'Georgia', 'Times New Roman', serif; margin-bottom: 8px; }
+.flashcard .front-hint { font-size: 12px; color: var(--text-light); }
+.flashcard .back-meaning { font-size: 18px; font-weight: 500; margin-bottom: 10px; }
+.flashcard .back-sentence { font-size: 14px; color: var(--text-sec); line-height: 1.6; font-style: italic; }
+.flashcard .back-notes { font-size: 12px; color: var(--text-light); margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); }
+.flip-hint { font-size: 11px; color: var(--text-light); margin-top: 14px; }
+.card-actions { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; width: 100%; max-width: 360px; margin-top: 20px; }
+.card-actions .btn { font-size: 13px; padding: 14px 8px; }
+.progress-bar { width: 100%; height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; margin: 12px 0; }
+.progress-fill { height: 100%; background: var(--accent); border-radius: 3px; transition: width 0.4s ease; }
+.empty-state { text-align: center; padding: 40px 20px; color: var(--text-sec); }
+.empty-state .icon { font-size: 40px; margin-bottom: 12px; opacity: 0.5; }
+.empty-state p { font-size: 14px; margin: 0; }
+.quiz-wrap { display: flex; flex-direction: column; height: 100%; padding: 20px; max-width: 400px; margin: 0 auto; width: 100%; }
+.quiz-question { font-size: 22px; font-weight: 600; text-align: center; margin: 20px 0; display: flex; align-items: center; justify-content: center; gap: 10px; }
+.quiz-phonetic { font-size: 14px; color: var(--text-light); font-family: 'Georgia', 'Times New Roman', serif; text-align: center; margin-top: -12px; margin-bottom: 8px; }
+.quiz-options { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
+.quiz-option { background: var(--card); border: 2px solid var(--border); border-radius: var(--radius-sm); padding: 14px 16px; font-family: inherit; font-size: 15px; text-align: left; cursor: pointer; transition: all 0.2s; -webkit-appearance: none; }
+.quiz-option:hover { border-color: var(--primary); }
+.quiz-option:active { transform: scale(0.98); }
+.quiz-option.correct { border-color: var(--accent); background: var(--accent-light); }
+.quiz-option.wrong { border-color: var(--danger); background: var(--danger-light); }
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: flex; align-items: flex-end; justify-content: center; z-index: 100; opacity: 0; pointer-events: none; transition: opacity 0.25s; }
+.modal-overlay.open { opacity: 1; pointer-events: auto; }
+.modal { background: var(--card); width: 100%; max-width: 600px; max-height: 85vh; border-radius: var(--radius) var(--radius) 0 0; padding: 20px; overflow-y: auto; transform: translateY(100%); transition: transform 0.3s ease; }
+.modal-overlay.open .modal { transform: translateY(0); }
+.modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+.modal-header h3 { margin: 0; font-size: 18px; }
+.modal-close { background: none; border: none; font-size: 22px; color: var(--text-sec); cursor: pointer; padding: 4px; -webkit-appearance: none; }
+.search-box { width: 100%; padding: 10px 14px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-family: inherit; font-size: 14px; background: var(--card); margin-bottom: 12px; outline: none; -webkit-appearance: none; }
+.search-box:focus { border-color: var(--primary); }
+.badge { font-size: 10px; padding: 2px 7px; border-radius: 10px; background: var(--primary-light); color: var(--primary); font-weight: 500; }
+.toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(100px); background: var(--text); color: white; padding: 10px 20px; border-radius: 30px; font-size: 13px; font-weight: 500; z-index: 200; opacity: 0; transition: all 0.3s ease; white-space: nowrap; }
+.toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+.import-box { width: 100%; padding: 12px 14px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-family: inherit; font-size: 14px; background: var(--card); margin-bottom: 12px; outline: none; min-height: 120px; resize: vertical; -webkit-appearance: none; }
+</style>
+</head>
+<body>
+
+<div id="app">
+  <div class="header">
+    <h1>📚 詞彙記憶卡</h1>
+    <div class="subtitle" id="headerSub">加入新詞，開始背誦</div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" data-tab="home">📊 總覽</button>
+    <button class="tab" data-tab="add">➕ 新增</button>
+    <button class="tab" data-tab="study">🎯 背誦</button>
+    <button class="tab" data-tab="quiz">📝 測驗</button>
+  </div>
+
+  <div class="content" id="view-home">
+    <div class="stats-row">
+      <div class="stat-card new"><div class="num" id="statNew">0</div><div class="label">新詞</div></div>
+      <div class="stat-card learning"><div class="num" id="statLearning">0</div><div class="label">學習中</div></div>
+      <div class="stat-card mastered"><div class="num" id="statMastered">0</div><div class="label">已掌握</div></div>
+    </div>
+    <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+    <div class="section-title">📋 全部詞彙 <span class="badge" id="totalBadge">0</span></div>
+    <input type="text" class="search-box" id="searchInput" placeholder="🔍 搜尋詞彙或意思..." />
+    <div class="entry-list" id="entryList"></div>
+    <div class="empty-state" id="emptyState" style="display:none">
+      <div class="icon">📝</div><p>還沒有詞彙，去「新增」加入第一個！</p>
+    </div>
+  </div>
+
+  <div class="content" id="view-add" style="display:none">
+    <div class="form-group"><label>單詞 / 詞組 *</label><input type="text" id="inputWord" placeholder="例如：serendipity" /></div>
+    <div class="form-group"><label>音標</label><input type="text" id="inputPhonetic" placeholder="例如：/ˌsɛrənˈdɪpɪti/" /></div>
+    <div class="form-group"><label>意思 / 解釋 *</label><input type="text" id="inputMeaning" placeholder="例如：意外發現美好事物的能力" /></div>
+    <div class="form-group"><label>例句</label><textarea id="inputSentence" placeholder="例如：Finding that old photo was pure serendipity."></textarea></div>
+    <div class="form-group"><label>備註</label><textarea id="inputNotes" placeholder="同義詞、用法提醒等..."></textarea></div>
+    <div style="display:flex;gap:10px;margin-top:8px">
+      <button class="btn btn-primary btn-block btn-lg" id="btnSave">💾 儲存</button>
+      <button class="btn btn-ghost btn-lg" id="btnClear">清除</button>
+    </div>
+    <div class="section-title" style="margin-top:24px">📥 批量導入</div>
+    <div class="form-group"><label>貼上多個單詞（每行一個，格式：單詞,音標,意思）</label>
+      <textarea class="import-box" id="bulkInput" placeholder="perspective,/pərˈspɛktɪv/,觀點&#10;align,/əˈlaɪn/,對齊"></textarea>
+    </div>
+    <button class="btn btn-accent btn-block" id="btnBulk">📥 批量導入</button>
+  </div>
+
+  <div class="content" id="view-study" style="display:none;padding:0">
+    <div class="flashcard-wrap" id="studyWrap">
+      <div class="empty-state" id="studyEmpty"><div class="icon">🎯</div><p>沒有可背誦的詞彙，先去新增一些！</p></div>
+      <div id="studyCardArea" style="display:none;width:100%;align-items:center;flex-direction:column">
+        <div style="font-size:12px;color:var(--text-light);margin-bottom:8px"><span id="studyCount">1 / 10</span></div>
+        <div class="flashcard" id="flashcard">
+          <div id="cardFront">
+            <div class="front-word" id="frontWord">Word <button class="speak-btn" id="btnSpeakWord">🔊</button></div>
+            <div class="front-phonetic" id="frontPhonetic"></div>
+            <div class="front-hint">點擊翻開答案</div>
+          </div>
+          <div id="cardBack" style="display:none">
+            <div class="back-meaning" id="backMeaning">Meaning</div>
+            <div class="back-sentence" id="backSentence">Sentence</div>
+            <div class="back-notes" id="backNotes" style="display:none"></div>
+          </div>
+        </div>
+        <div class="flip-hint" id="flipHint">👆 點擊卡片翻開</div>
+        <div class="card-actions" id="cardActions" style="display:none">
+          <button class="btn btn-danger" id="btnAgain">🔄 再來</button>
+          <button class="btn btn-warn" id="btnHard">🤔 困難</button>
+          <button class="btn btn-accent" id="btnGood">✅ 記住</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="content" id="view-quiz" style="display:none;padding:0">
+    <div class="quiz-wrap" id="quizWrap">
+      <div class="empty-state" id="quizEmpty"><div class="icon">📝</div><p>需要至少 4 個詞彙才能開始測驗</p></div>
+      <div id="quizArea" style="display:none;width:100%">
+        <div style="font-size:12px;color:var(--text-light);text-align:center;margin-top:10px"><span id="quizCount">1 / 5</span></div>
+        <div class="quiz-question" id="quizQuestion">Question? <button class="speak-btn" id="btnSpeakQuiz">🔊</button></div>
+        <div class="quiz-phonetic" id="quizPhonetic"></div>
+        <div class="quiz-options" id="quizOptions"></div>
+        <button class="btn btn-primary btn-block" style="margin-top:16px" id="quizNextBtn" disabled>下一題</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="editModal">
+  <div class="modal">
+    <div class="modal-header"><h3>✏️ 編輯詞彙</h3><button class="modal-close" id="btnModalClose">&times;</button></div>
+    <div class="form-group"><label>單詞 / 詞組</label><input type="text" id="editWord" /></div>
+    <div class="form-group"><label>音標</label><input type="text" id="editPhonetic" /></div>
+    <div class="form-group"><label>意思 / 解釋</label><input type="text" id="editMeaning" /></div>
+    <div class="form-group"><label>例句</label><textarea id="editSentence"></textarea></div>
+    <div class="form-group"><label>備註</label><textarea id="editNotes"></textarea></div>
+    <div style="display:flex;gap:10px;margin-top:8px">
+      <button class="btn btn-primary btn-block" id="btnSaveEdit">💾 儲存修改</button>
+      <button class="btn btn-danger" id="btnDelete">🗑️ 刪除</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const STORAGE_KEY = 'vocab_memo_entries_v2';
+let entries = [];
+let editingId = null;
+let studyQueue = [];
+let studyIndex = 0;
+let quizQueue = [];
+let quizIndex = 0;
+let currentQuiz = null;
+let flipped = false;
+
+const DEFAULT_ENTRIES = [
+  { id: 'def_1', word: 'perspective', phonetic: '/pərˈspɛktɪv/', meaning: '觀點；視角；透視法', sentence: '', notes: '', status: 'new', created: Date.now(), reviewCount: 0, lastReviewed: null },
+  { id: 'def_2', word: 'align', phonetic: '/əˈlaɪn/', meaning: '對齊；使一致；配合', sentence: '', notes: '', status: 'new', created: Date.now(), reviewCount: 0, lastReviewed: null },
+  { id: 'def_3', word: 'origin', phonetic: '/ˈɔrədʒɪn/', meaning: '起源；來源；出身', sentence: '', notes: '', status: 'new', created: Date.now(), reviewCount: 0, lastReviewed: null },
+  { id: 'def_4', word: 'future-oriented', phonetic: '/ˈfjuːtʃər ˈɔːrientɪd/', meaning: '面向未來的；以未來為導向的', sentence: '', notes: '', status: 'new', created: Date.now(), reviewCount: 0, lastReviewed: null },
+  { id: 'def_5', word: 'revolutionary', phonetic: '/ˌrɛvəˈluːʃəˌnɛri/', meaning: '革命性的；徹底創新的', sentence: 'Our founder created White Flower Oil during a time when the product itself felt revolutionary.', notes: 'Elaine 提案用語', status: 'new', created: Date.now(), reviewCount: 0, lastReviewed: null },
+  { id: 'def_6', word: 'inspiration', phonetic: '/ˌɪnspəˈreɪʃən/', meaning: '靈感；啟發；鼓舞', sentence: '', notes: '', status: 'new', created: Date.now(), reviewCount: 0, lastReviewed: null },
+  { id: 'def_7', word: 'original', phonetic: '/əˈrɪdʒɪnəl/', meaning: '原創的；原始的；最初的', sentence: '', notes: '', status: 'new', created: Date.now(), reviewCount: 0, lastReviewed: null },
+  { id: 'def_8', word: 'structure', phonetic: '/ˈstrʌktʃər/', meaning: '結構；構造；體系', sentence: '', notes: '', status: 'new', created: Date.now(), reviewCount: 0, lastReviewed: null },
+  { id: 'def_9', word: 'tones', phonetic: '/toʊnz/', meaning: '色調；語氣；音調', sentence: '', notes: '', status: 'new', created: Date.now(), reviewCount: 0, lastReviewed: null },
+  { id: 'def_10', word: 'evolve', phonetic: '/ɪˈvɒlv/', meaning: '演變；進化；發展', sentence: '', notes: '', status: 'new', created: Date.now(), reviewCount: 0, lastReviewed: null },
+  { id: 'def_11', word: 'kanji', phonetic: '/ˈkændʒi/', meaning: '漢字（日文）', sentence: '', notes: '', status: 'new', created: Date.now(), reviewCount: 0, lastReviewed: null },
+  { id: 'def_12', word: 'correspond', phonetic: '/ˌkɔːrəˈspɒnd/', meaning: '對應；相符；通信', sentence: '', notes: '', status: 'new', created: Date.now(), reviewCount: 0, lastReviewed: null },
+  { id: 'def_13', word: 'hiragana', phonetic: '/ˌhɪrəˈɡɑːnə/', meaning: '平假名（日文）', sentence: '', notes: '', status: 'new', created: Date.now(), reviewCount: 0, lastReviewed: null },
+  { id: 'def_sent_1', word: 'Our founder, Mr. GAN GEOK ENG...', phonetic: '', meaning: '創辦人顏玉瑩先生在一個產品本身就具有革命性的時代創造了白花油。', sentence: 'Our founder, Mr. GAN GEOK ENG, created White Flower Oil during a time when the product itself felt revolutionary.', notes: 'Elaine 提案核心句', status: 'new', created: Date.now(), reviewCount: 0, lastReviewed: null }
+];
+
+function loadData() {
+  try {
+    var raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) { entries = JSON.parse(raw); }
+    else { entries = DEFAULT_ENTRIES.slice(); saveData(false); }
+  } catch (e) { entries = DEFAULT_ENTRIES.slice(); }
+  renderAll();
+}
+
+function saveData(show) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
+  renderAll();
+  if (show !== false) showToast('已儲存');
+}
+
+function genId() {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+}
+
+function speak(text) {
+  if (!window.speechSynthesis) { showToast('此裝置不支援發音'); return; }
+  window.speechSynthesis.cancel();
+  var u = new SpeechSynthesisUtterance(text);
+  u.lang = 'en-US';
+  u.rate = 0.9;
+  window.speechSynthesis.speak(u);
+}
+
+function renderAll() {
+  renderStats();
+  renderList();
+  renderStudy();
+  renderQuiz();
+}
+
+function renderStats() {
+  var total = entries.length, newC = 0, learning = 0, mastered = 0;
+  for (var i = 0; i < entries.length; i++) {
+    if (entries[i].status === 'new') newC++;
+    else if (entries[i].status === 'learning') learning++;
+    else if (entries[i].status === 'mastered') mastered++;
+  }
+  document.getElementById('statNew').textContent = newC;
+  document.getElementById('statLearning').textContent = learning;
+  document.getElementById('statMastered').textContent = mastered;
+  document.getElementById('totalBadge').textContent = total;
+  document.getElementById('progressFill').style.width = total ? Math.round((mastered / total) * 100) + '%' : '0%';
+}
+
+function renderList() {
+  var q = document.getElementById('searchInput').value.trim().toLowerCase();
+  var list = document.getElementById('entryList');
+  var empty = document.getElementById('emptyState');
+  var filtered = entries;
+  if (q) {
+    filtered = entries.filter(function(e) {
+      return (e.word || '').toLowerCase().indexOf(q) !== -1 || (e.meaning || '').toLowerCase().indexOf(q) !== -1 || (e.sentence || '').toLowerCase().indexOf(q) !== -1;
+    });
+  }
+  if (filtered.length === 0) {
+    list.innerHTML = '';
+    empty.style.display = entries.length === 0 ? 'block' : 'none';
+    if (entries.length > 0) list.innerHTML = '<div class="empty-state"><p>沒有符合搜尋的結果</p></div>';
+    return;
+  }
+  empty.style.display = 'none';
+  var html = '';
+  for (var i = 0; i < filtered.length; i++) {
+    var e = filtered[i];
+    html += '<div class="entry-card" data-edit-id="' + e.id + '">' +
+      '<div class="word">' + escapeHtml(e.word) + ' <button class="speak-btn" data-speak="' + escapeHtml(e.word) + '">🔊</button></div>' +
+      (e.phonetic ? '<div class="phonetic">' + escapeHtml(e.phonetic) + '</div>' : '') +
+      '<div class="meaning">' + escapeHtml(e.meaning) + '</div>' +
+      (e.sentence ? '<div class="meaning" style="margin-top:6px;font-style:italic">' + escapeHtml(e.sentence) + '</div>' : '') +
+      '<div class="meta">' +
+        '<span class="status-tag ' + e.status + '">' + statusText(e.status) + '</span>' +
+        '<span class="date-tag">背過 ' + (e.reviewCount || 0) + ' 次</span>' +
+      '</div></div>';
+  }
+  list.innerHTML = html;
+}
+
+function escapeHtml(t) {
+  if (!t) return '';
+  return t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+function statusText(s) {
+  return { new: '新詞', learning: '學習中', mastered: '已掌握' }[s] || s;
+}
+
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach(function(t) { t.classList.remove('active'); });
+  document.querySelector('[data-tab="' + tab + '"]').classList.add('active');
+  ['home','add','study','quiz'].forEach(function(v) {
+    document.getElementById('view-' + v).style.display = v === tab ? 'block' : 'none';
+  });
+  if (tab === 'study') renderStudy();
+  if (tab === 'quiz') renderQuiz();
+}
+
+function addEntry() {
+  var word = document.getElementById('inputWord').value.trim();
+  var meaning = document.getElementById('inputMeaning').value.trim();
+  if (!word || !meaning) { showToast('請填寫單詞和意思'); return; }
+  entries.unshift({
+    id: genId(), word: word, phonetic: document.getElementById('inputPhonetic').value.trim(),
+    meaning: meaning,
+    sentence: document.getElementById('inputSentence').value.trim(),
+    notes: document.getElementById('inputNotes').value.trim(),
+    status: 'new', created: Date.now(), reviewCount: 0, lastReviewed: null
+  });
+  saveData();
+  clearForm();
+  showToast('已加入！');
+  switchTab('home');
+}
+
+function addBulk() {
+  var raw = document.getElementById('bulkInput').value.trim();
+  if (!raw) { showToast('請貼上單詞'); return; }
+  var lines = raw.split(/\n/);
+  var added = 0;
+  for (var i = 0; i < lines.length; i++) {
+    var line = lines[i].trim();
+    if (!line) continue;
+    var parts = line.split(',');
+    var word = parts[0].trim();
+    var phonetic = parts[1] ? parts[1].trim() : '';
+    var meaning = parts.slice(2).join(',').trim();
+    if (!word) continue;
+    entries.unshift({
+      id: genId(), word: word, phonetic: phonetic, meaning: meaning || '',
+      sentence: '', notes: '', status: 'new', created: Date.now(), reviewCount: 0, lastReviewed: null
+    });
+    added++;
+  }
+  if (added > 0) {
+    saveData();
+    document.getElementById('bulkInput').value = '';
+    showToast('已導入 ' + added + ' 個詞彙！');
+    switchTab('home');
+  } else {
+    showToast('沒有解析到有效詞彙');
+  }
+}
+
+function clearForm() {
+  document.getElementById('inputWord').value = '';
+  document.getElementById('inputPhonetic').value = '';
+  document.getElementById('inputMeaning').value = '';
+  document.getElementById('inputSentence').value = '';
+  document.getElementById('inputNotes').value = '';
+}
+
+function openEdit(id) {
+  var e = entries.find(function(x) { return x.id === id; });
+  if (!e) return;
+  editingId = id;
+  document.getElementById('editWord').value = e.word;
+  document.getElementById('editPhonetic').value = e.phonetic || '';
+  document.getElementById('editMeaning').value = e.meaning;
+  document.getElementById('editSentence').value = e.sentence || '';
+  document.getElementById('editNotes').value = e.notes || '';
+  document.getElementById('editModal').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('editModal').classList.remove('open');
+  editingId = null;
+}
+
+function saveEdit() {
+  if (!editingId) return;
+  var e = entries.find(function(x) { return x.id === editingId; });
+  if (!e) return;
+  e.word = document.getElementById('editWord').value.trim();
+  e.phonetic = document.getElementById('editPhonetic').value.trim();
+  e.meaning = document.getElementById('editMeaning').value.trim();
+  e.sentence = document.getElementById('editSentence').value.trim();
+  e.notes = document.getElementById('editNotes').value.trim();
+  saveData();
+  closeModal();
+}
+
+function deleteEntry() {
+  if (!editingId) return;
+  if (!confirm('確定刪除這個詞彙？')) return;
+  entries = entries.filter(function(x) { return x.id !== editingId; });
+  saveData();
+  closeModal();
+}
+
+function renderStudy() {
+  var area = document.getElementById('studyCardArea');
+  var empty = document.getElementById('studyEmpty');
+  if (entries.length === 0) { area.style.display = 'none'; empty.style.display = 'block'; return; }
+  studyQueue = entries.slice().sort(function(a, b) {
+    var p = { new: 0, learning: 1, mastered: 2 };
+    return (p[a.status] || 0) - (p[b.status] || 0);
+  });
+  studyIndex = 0;
+  showCard();
+  area.style.display = 'flex';
+  empty.style.display = 'none';
+}
+
+function showCard() {
+  flipped = false;
+  var e = studyQueue[studyIndex];
+  document.getElementById('studyCount').textContent = (studyIndex + 1) + ' / ' + studyQueue.length;
+  document.getElementById('frontWord').childNodes[0].nodeValue = e.word + ' ';
+  document.getElementById('frontPhonetic').textContent = e.phonetic || '';
+  document.getElementById('backMeaning').textContent = e.meaning;
+  document.getElementById('backSentence').textContent = e.sentence || '';
+  var notesEl = document.getElementById('backNotes');
+  if (e.notes) { notesEl.textContent = e.notes; notesEl.style.display = 'block'; }
+  else { notesEl.style.display = 'none'; }
+  document.getElementById('cardFront').style.display = 'block';
+  document.getElementById('cardBack').style.display = 'none';
+  document.getElementById('flipHint').textContent = '👆 點擊卡片翻開';
+  document.getElementById('cardActions').style.display = 'none';
+}
+
+function flipCard() {
+  if (flipped) return;
+  flipped = true;
+  document.getElementById('cardFront').style.display = 'none';
+  document.getElementById('cardBack').style.display = 'block';
+  document.getElementById('flipHint').textContent = '你記住了嗎？';
+  document.getElementById('cardActions').style.display = 'grid';
+}
+
+function markCard(result) {
+  var e = studyQueue[studyIndex];
+  var entry = entries.find(function(x) { return x.id === e.id; });
+  if (!entry) return;
+  entry.reviewCount = (entry.reviewCount || 0) + 1;
+  entry.lastReviewed = Date.now();
+  if (result === 'again') entry.status = 'learning';
+  else if (result === 'hard') entry.status = entry.status === 'new' ? 'learning' : entry.status;
+  else if (result === 'good') { if (entry.reviewCount >= 3) entry.status = 'mastered'; else entry.status = 'learning'; }
+  saveData();
+  studyIndex++;
+  if (studyIndex >= studyQueue.length) { showToast('🎉 本輪完成！'); studyIndex = 0; renderStudy(); return; }
+  showCard();
+}
+
+function renderQuiz() {
+  var area = document.getElementById('quizArea');
+  var empty = document.getElementById('quizEmpty');
+  if (entries.length < 4) { area.style.display = 'none'; empty.style.display = 'block'; return; }
+  area.style.display = 'block'; empty.style.display = 'none';
+  var shuffled = entries.slice().sort(function() { return Math.random() - 0.5; });
+  quizQueue = shuffled.slice(0, Math.min(5, entries.length));
+  quizIndex = 0;
+  showQuiz();
+}
+
+function showQuiz() {
+  var e = quizQueue[quizIndex];
+  document.getElementById('quizCount').textContent = (quizIndex + 1) + ' / ' + quizQueue.length;
+  document.getElementById('quizQuestion').childNodes[0].nodeValue = e.word + ' ';
+  document.getElementById('quizPhonetic').textContent = e.phonetic || '';
+  var wrong = entries.filter(function(x) { return x.id !== e.id; }).slice().sort(function() { return Math.random() - 0.5; }).slice(0, 3);
+  var options = wrong.concat([e]).slice().sort(function() { return Math.random() - 0.5; });
+  currentQuiz = { correctId: e.id };
+  var optsDiv = document.getElementById('quizOptions');
+  var html = '';
+  for (var i = 0; i < options.length; i++) {
+    var o = options[i];
+    html += '<button class="quiz-option" data-id="' + o.id + '">' + escapeHtml(o.meaning) + '</button>';
+  }
+  optsDiv.innerHTML = html;
+  document.getElementById('quizNextBtn').disabled = true;
+  document.getElementById('quizNextBtn').textContent = quizIndex + 1 >= quizQueue.length ? '完成測驗' : '下一題';
+}
+
+function answerQuiz(id) {
+  if (!currentQuiz) return;
+  var correct = id === currentQuiz.correctId;
+  document.querySelectorAll('.quiz-option').forEach(function(btn) {
+    btn.disabled = true;
+    if (btn.dataset.id === currentQuiz.correctId) btn.classList.add('correct');
+    else if (btn.dataset.id === id && !correct) btn.classList.add('wrong');
+  });
+  var entry = entries.find(function(x) { return x.id === currentQuiz.correctId; });
+  if (entry) {
+    entry.reviewCount = (entry.reviewCount || 0) + 1;
+    entry.lastReviewed = Date.now();
+    if (correct) { if (entry.reviewCount >= 3) entry.status = 'mastered'; else entry.status = 'learning'; showToast('✅ 正確！'); }
+    else { entry.status = 'learning'; showToast('❌ 不對，再加油！'); }
+    saveData();
+  }
+  document.getElementById('quizNextBtn').disabled = false;
+}
+
+function nextQuiz() {
+  quizIndex++;
+  if (quizIndex >= quizQueue.length) { showToast('🎉 測驗完成！'); quizIndex = 0; renderQuiz(); return; }
+  showQuiz();
+}
+
+function showToast(msg) {
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(function() { t.classList.remove('show'); }, 2000);
+}
+
+function bindEvents() {
+  document.querySelectorAll('.tab').forEach(function(btn) {
+    btn.addEventListener('click', function() { switchTab(btn.dataset.tab); });
+  });
+  document.getElementById('btnSave').addEventListener('click', addEntry);
+  document.getElementById('btnClear').addEventListener('click', clearForm);
+  document.getElementById('btnBulk').addEventListener('click', addBulk);
+  document.getElementById('btnAgain').addEventListener('click', function() { markCard('again'); });
+  document.getElementById('btnHard').addEventListener('click', function() { markCard('hard'); });
+  document.getElementById('btnGood').addEventListener('click', function() { markCard('good'); });
+  document.getElementById('flashcard').addEventListener('click', flipCard);
+  document.getElementById('btnModalClose').addEventListener('click', closeModal);
+  document.getElementById('btnSaveEdit').addEventListener('click', saveEdit);
+  document.getElementById('btnDelete').addEventListener('click', deleteEntry);
+  document.getElementById('quizNextBtn').addEventListener('click', nextQuiz);
+  document.getElementById('searchInput').addEventListener('input', renderList);
+  document.getElementById('btnSpeakWord').addEventListener('click', function(e) { e.stopPropagation(); var w = studyQueue[studyIndex]; if(w) speak(w.word); });
+  document.getElementById('btnSpeakQuiz').addEventListener('click', function(e) { e.stopPropagation(); var w = quizQueue[quizIndex]; if(w) speak(w.word); });
+  document.getElementById('entryList').addEventListener('click', function(e) {
+    var spk = e.target.closest('.speak-btn');
+    if (spk) { e.stopPropagation(); speak(spk.dataset.speak); return; }
+    var card = e.target.closest('.entry-card');
+    if (card) openEdit(card.dataset.editId);
+  });
+  document.getElementById('quizOptions').addEventListener('click', function(e) {
+    var btn = e.target.closest('.quiz-option');
+    if (btn && !btn.disabled) answerQuiz(btn.dataset.id);
+  });
+  document.getElementById('editModal').addEventListener('click', function(e) {
+    if (e.target === document.getElementById('editModal')) closeModal();
+  });
+}
+
+bindEvents();
+loadData();
+</script>
+</body>
+</html>
