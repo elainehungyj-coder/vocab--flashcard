@@ -1,0 +1,15 @@
+{
+  "name": "Vocab-Flashcard",
+  "short_name": "Vocab",
+  "icons": [
+    {
+      "src": "icon-final.png?v=1",
+      "sizes": "180x180",
+      "type": "image/png"
+    }
+  ],
+  "display": "standalone",
+  "start_url": "/vocab--flashcard/",
+  "theme_color": "#2d5a8a",
+  "background_color": "#faf9f7"
+}
